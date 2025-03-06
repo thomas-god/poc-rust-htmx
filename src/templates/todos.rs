@@ -28,7 +28,7 @@ pub fn todo_form() -> Markup {
                 hx-target="#todos-list"
                 hx-swap="beforeend"
                 hx-on::after-request="if(event.detail.successful) {this.reset();}" {
-                    input #todo type="text" name="content" {}
+                    input #todo type="text" name="content" .input {}
                     label for="todo" { "Todo content" }
                     button {"Add todo"}
             }

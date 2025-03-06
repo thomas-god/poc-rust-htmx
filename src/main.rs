@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
     routing::{get, post},
 };
-use maud::{PreEscaped, html};
+use maud::{DOCTYPE, html};
 use serde::{Deserialize, Serialize};
 use templates::todos::{todo_form, todo_view, todos_view};
 use tokio::sync::RwLock;
@@ -72,10 +72,18 @@ async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> impl In
     match headers.get("Accept").and_then(|h| h.to_str().ok()) {
         Some("application/json") => Json(&state.todos).into_response(),
         _ => html! {
-            (PreEscaped("<script src=\"/assets/htmx.min.js\"></script>"))
-            h1 { "Hello, world" }
-            (todo_form())
-            (todos_view(&state.todos))
+            (DOCTYPE)
+            html {
+                head {
+                    script src="/assets/htmx.min.js" {}
+                    link href="/assets/style/output.css" rel="stylesheet";
+                }
+                body .flex .flex-col {
+                    h1 { "Hello, world" }
+                    (todo_form())
+                    (todos_view(&state.todos))
+                }
+            }
         }
         .into_response(),
     }
