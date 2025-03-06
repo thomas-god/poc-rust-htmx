@@ -4,9 +4,9 @@ A proof of concept to see how far you can go with rust + htmx
 
 ## Goals
 
-- [ ] How to integrate the view/templating layer into a Rust application,
+- [x] How to integrate the view/templating layer into a Rust application,
       without introducing coupling in the domain layer,
-- [ ] How to expose both a JSON-based API and a htmx-based client without
+- [x] How to expose both a JSON-based API and a htmx-based client without
       duplicating business logic,
 - [ ] How do to htmx with websocket,
 - [ ] Integrate tailwindcss/daisyui within the template/output HTML,
