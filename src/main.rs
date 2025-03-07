@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
     routing::{get, post},
 };
-use maud::{DOCTYPE, html};
+use maud::{DOCTYPE, Markup, html};
 use serde::{Deserialize, Serialize};
 use templates::todos::{todo_form, todo_view, todos_view};
 use tokio::sync::RwLock;
@@ -52,6 +52,7 @@ async fn main() {
     }));
 
     let app = Router::new()
+        .route("/", get(root))
         .route("/todos", get(get_todos))
         .route("/todo", post(create_todo))
         .nest_service("/assets", ServeDir::new("assets"))
@@ -66,6 +67,24 @@ async fn main() {
         .expect("Could not start application");
 }
 
+async fn root() -> Markup {
+    html!(
+        (DOCTYPE)
+        html {
+            head {
+                script src="/assets/htmx.min.js" {}
+                link href="/assets/style/output.css" rel="stylesheet";
+            }
+            body {
+                h1.text-2xl.font-bold.text-center.mt-2 { "htmx + rust" }
+                div.flex.flex-col.mt-4 {
+                    a.link.self-center href="/todos" { "Todos" }
+                }
+            }
+        }
+    )
+}
+
 async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> impl IntoResponse {
     let state = state.read().await;
 
@@ -78,9 +97,11 @@ async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> impl In
                     script src="/assets/htmx.min.js" {}
                     link href="/assets/style/output.css" rel="stylesheet";
                 }
-                body .flex .flex-col {
-                    h1 { "Hello, world" }
-                    (todo_form())
+                body.flex.flex-col {
+                    h1.text-2xl.text-center.mt-2 { "A basic todos app" }
+                    div.self-center.pt-8 {
+                        (todo_form())
+                    }
                     (todos_view(&state.todos))
                 }
             }

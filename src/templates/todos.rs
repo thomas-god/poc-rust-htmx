@@ -4,11 +4,9 @@ use crate::Todo;
 
 pub fn todos_view(todos: &[Todo]) -> Markup {
     html! {
-        div {
-            ol id="todos-list" {
-                @for todo in todos {
-                    (todo_view(todo))
-                }
+        ul.list.bg-base-100.rounded-box.shadow-md.m-6 id="todos-list" {
+            @for todo in todos {
+                (todo_view(todo))
             }
         }
     }
@@ -16,7 +14,11 @@ pub fn todos_view(todos: &[Todo]) -> Markup {
 
 pub fn todo_view(todo: &Todo) -> Markup {
     html! {
-        li { (todo.content) }
+        li.list-row.hover:bg-base-300 {
+            div.list-col-grow {
+                (todo.content)
+            }
+        }
     }
 }
 
@@ -28,9 +30,14 @@ pub fn todo_form() -> Markup {
                 hx-target="#todos-list"
                 hx-swap="beforeend"
                 hx-on::after-request="if(event.detail.successful) {this.reset();}" {
-                    input #todo type="text" name="content" .input {}
-                    label for="todo" { "Todo content" }
-                    button {"Add todo"}
+                fiedlset.fieldset.w-xs.bg-base-200.border.border-base-300.p-4.rounded-box {
+                    legend.fieldset-legend { "New todo" }
+                    div.join {
+                        input.input.join-item #todo type="text" name="content" {}
+                        // label for="todo" { "Todo content" }
+                        button.btn.btn-primary.join-item {"Add"}
+                    }
+                }
             }
         }
     )
