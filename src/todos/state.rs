@@ -36,9 +36,7 @@ impl AppState {
     }
 
     pub fn toggle_todo(&mut self, todo_id: usize) -> Option<&Todo> {
-        let Some(todo) = self.todos.iter_mut().find(|t| t.id == todo_id) else {
-            return None;
-        };
+        let todo = self.todos.iter_mut().find(|t| t.id == todo_id)?;
         todo.done = !todo.done;
         Some(todo)
     }

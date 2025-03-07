@@ -1,6 +1,6 @@
 use maud::{Markup, html};
 
-use crate::state::Todo;
+use crate::todos::state::Todo;
 
 pub fn todos_view(todos: &[Todo]) -> Markup {
     html! {
