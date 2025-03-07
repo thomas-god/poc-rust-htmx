@@ -8,14 +8,14 @@ pub struct Todo {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AppState {
+pub struct TodosState {
     todos: Vec<Todo>,
     todo_counter: usize,
 }
 
-impl AppState {
-    pub fn new() -> AppState {
-        AppState {
+impl TodosState {
+    pub fn new() -> TodosState {
+        TodosState {
             todos: Vec::new(),
             todo_counter: 0,
         }
@@ -47,8 +47,8 @@ impl AppState {
     }
 }
 
-impl Default for AppState {
+impl Default for TodosState {
     fn default() -> Self {
-        AppState::new()
+        TodosState::new()
     }
 }

@@ -19,7 +19,7 @@ pub async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> imp
     let state = state.read().await;
 
     match headers.get("Accept").and_then(|h| h.to_str().ok()) {
-        Some("application/json") => Json(state.todos()).into_response(),
+        Some("application/json") => Json(state.todos.todos()).into_response(),
         _ => html! {
             (DOCTYPE)
             html {
@@ -32,7 +32,7 @@ pub async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> imp
                     div.self-center.pt-8 {
                         (todo_form())
                     }
-                    (todos_view(state.todos()))
+                    (todos_view(state.todos.todos()))
                 }
             }
         }
@@ -56,7 +56,7 @@ pub async fn create_todo(
     }
 
     let mut state = state.write().await;
-    let todo = state.add_todo(&content);
+    let todo = state.todos.add_todo(&content);
 
     match headers.get("Accept").and_then(|h| h.to_str().ok()) {
         Some("application/json") => Json(todo).into_response(),
@@ -70,7 +70,7 @@ pub async fn toggle_todo(
     Path((id,)): Path<(usize,)>,
 ) -> impl IntoResponse {
     let mut state = state.write().await;
-    let Some(todo) = state.toggle_todo(id) else {
+    let Some(todo) = state.todos.toggle_todo(id) else {
         return StatusCode::NOT_FOUND.into_response();
     };
 
@@ -82,7 +82,7 @@ pub async fn toggle_todo(
 
 pub async fn delete_todo(State(state): State<ApiState>, Path((id,)): Path<(usize,)>) -> StatusCode {
     let mut state = state.write().await;
-    let Some(_todo) = state.delete_todo(id) else {
+    let Some(_todo) = state.todos.delete_todo(id) else {
         return StatusCode::NOT_FOUND;
     };
     StatusCode::OK
