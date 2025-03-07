@@ -42,6 +42,11 @@ impl AppState {
         todo.done = !todo.done;
         Some(todo)
     }
+
+    pub fn delete_todo(&mut self, todo_id: usize) -> Option<Todo> {
+        let position = self.todos.iter().position(|t| t.id == todo_id)?;
+        Some(self.todos.swap_remove(position))
+    }
 }
 
 impl Default for AppState {

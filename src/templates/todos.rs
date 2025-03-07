@@ -13,7 +13,8 @@ pub fn todos_view(todos: &[Todo]) -> Markup {
 }
 
 pub fn todo_view(todo: &Todo) -> Markup {
-    let post_url = format!("/todo/{}/toggle", todo.id);
+    let toggle_url = format!("/todo/{}/toggle", todo.id);
+    let delete_url = format!("/todo/{}", todo.id);
     let content_style = if todo.done {
         "line-through text-gray-500"
     } else {
@@ -21,7 +22,7 @@ pub fn todo_view(todo: &Todo) -> Markup {
     };
     html! {
         li.list-row.hover:bg-base-300
-            hx-post=(post_url)
+            hx-post=(toggle_url)
             hx-trigger="click"
             hx-target="closest li"
             hx-swap="outerHTML" {
@@ -29,6 +30,14 @@ pub fn todo_view(todo: &Todo) -> Markup {
             {
                 span class=(content_style) {
                     (todo.content)
+                }
+            }
+            div {
+                button.btn.btn-secondary
+                hx-delete=(delete_url)
+                hx-target="closest li"
+                hx-trigger="click consume" {
+                    "X"
                 }
             }
         }

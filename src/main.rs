@@ -5,7 +5,7 @@ use axum::{
     extract::{FromRequest, Path, Request, State},
     http::{HeaderMap, StatusCode, header},
     response::IntoResponse,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use maud::{DOCTYPE, Markup, html};
 use serde::Deserialize;
@@ -30,6 +30,7 @@ async fn main() {
         .route("/todos", get(get_todos))
         .route("/todo", post(create_todo))
         .route("/todo/{id}/toggle", post(toggle_todo))
+        .route("/todo/{id}", delete(delete_todo))
         .nest_service("/assets", ServeDir::new("assets"))
         .with_state(state);
 
@@ -157,4 +158,12 @@ async fn toggle_todo(
         Some("application/json") => Json(todo).into_response(),
         _ => todo_view(todo).into_response(),
     }
+}
+
+async fn delete_todo(State(state): State<ApiState>, Path((id,)): Path<(usize,)>) -> StatusCode {
+    let mut state = state.write().await;
+    let Some(_todo) = state.delete_todo(id) else {
+        return StatusCode::NOT_FOUND;
+    };
+    StatusCode::OK
 }
