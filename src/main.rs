@@ -2,43 +2,20 @@ use std::sync::Arc;
 
 use axum::{
     Form, Json, Router,
-    extract::{FromRequest, Request, State},
+    extract::{FromRequest, Path, Request, State},
     http::{HeaderMap, StatusCode, header},
     response::IntoResponse,
     routing::{get, post},
 };
 use maud::{DOCTYPE, Markup, html};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use state::AppState;
 use templates::todos::{todo_form, todo_view, todos_view};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 
+pub mod state;
 pub mod templates;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct AppState {
-    pub todos: Vec<Todo>,
-    pub todo_counter: usize,
-}
-
-impl AppState {
-    pub fn add_todo(&mut self, content: &str) -> &Todo {
-        self.todos.push(Todo {
-            id: self.todo_counter,
-            content: content.to_owned(),
-            done: false,
-        });
-        self.todo_counter += 1;
-        self.todos.last().unwrap()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct Todo {
-    pub id: usize,
-    pub content: String,
-    pub done: bool,
-}
 
 type ApiState = Arc<RwLock<AppState>>;
 
@@ -46,15 +23,13 @@ type ApiState = Arc<RwLock<AppState>>;
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let state = Arc::new(RwLock::new(AppState {
-        todos: Vec::new(),
-        todo_counter: 0,
-    }));
+    let state = Arc::new(RwLock::new(AppState::new()));
 
     let app = Router::new()
         .route("/", get(root))
         .route("/todos", get(get_todos))
         .route("/todo", post(create_todo))
+        .route("/todo/{id}/toggle", post(toggle_todo))
         .nest_service("/assets", ServeDir::new("assets"))
         .with_state(state);
 
@@ -89,7 +64,7 @@ async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> impl In
     let state = state.read().await;
 
     match headers.get("Accept").and_then(|h| h.to_str().ok()) {
-        Some("application/json") => Json(&state.todos).into_response(),
+        Some("application/json") => Json(state.todos()).into_response(),
         _ => html! {
             (DOCTYPE)
             html {
@@ -102,7 +77,7 @@ async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> impl In
                     div.self-center.pt-8 {
                         (todo_form())
                     }
-                    (todos_view(&state.todos))
+                    (todos_view(state.todos()))
                 }
             }
         }
@@ -114,11 +89,12 @@ async fn get_todos(State(state): State<ApiState>, headers: HeaderMap) -> impl In
 pub struct CreateTodoRequest {
     content: String,
 }
-struct TodoRequestExtractor(CreateTodoRequest);
+struct ContentNegotiator<T>(T);
 
-impl<S> FromRequest<S> for TodoRequestExtractor
+impl<S, T> FromRequest<S> for ContentNegotiator<T>
 where
     S: Send + Sync,
+    T: for<'de> Deserialize<'de> + Send,
 {
     type Rejection = StatusCode;
 
@@ -132,26 +108,26 @@ where
         // Check content type to determine how to parse
         if content_type.starts_with("application/json") {
             // Parse as JSON
-            let Json(payload) = Json::<CreateTodoRequest>::from_request(req, state)
+            let Json(payload) = Json::<T>::from_request(req, state)
                 .await
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-            return Ok(TodoRequestExtractor(payload));
+            return Ok(ContentNegotiator(payload));
         }
 
         // Default to form data
-        let Form(payload) = Form::<CreateTodoRequest>::from_request(req, state)
+        let Form(payload) = Form::<T>::from_request(req, state)
             .await
             .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-        Ok(TodoRequestExtractor(payload))
+        Ok(ContentNegotiator(payload))
     }
 }
 
 async fn create_todo(
     State(state): State<ApiState>,
     headers: HeaderMap,
-    TodoRequestExtractor(payload): TodoRequestExtractor,
+    ContentNegotiator(payload): ContentNegotiator<CreateTodoRequest>,
 ) -> impl IntoResponse {
     let content = payload.content;
     if content.is_empty() {
@@ -160,6 +136,22 @@ async fn create_todo(
 
     let mut state = state.write().await;
     let todo = state.add_todo(&content);
+
+    match headers.get("Accept").and_then(|h| h.to_str().ok()) {
+        Some("application/json") => Json(todo).into_response(),
+        _ => todo_view(todo).into_response(),
+    }
+}
+
+async fn toggle_todo(
+    State(state): State<ApiState>,
+    headers: HeaderMap,
+    Path((id,)): Path<(usize,)>,
+) -> impl IntoResponse {
+    let mut state = state.write().await;
+    let Some(todo) = state.toggle_todo(id) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
 
     match headers.get("Accept").and_then(|h| h.to_str().ok()) {
         Some("application/json") => Json(todo).into_response(),

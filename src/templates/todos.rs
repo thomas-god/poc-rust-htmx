@@ -1,6 +1,6 @@
 use maud::{Markup, html};
 
-use crate::Todo;
+use crate::state::Todo;
 
 pub fn todos_view(todos: &[Todo]) -> Markup {
     html! {
@@ -13,10 +13,23 @@ pub fn todos_view(todos: &[Todo]) -> Markup {
 }
 
 pub fn todo_view(todo: &Todo) -> Markup {
+    let post_url = format!("/todo/{}/toggle", todo.id);
+    let content_style = if todo.done {
+        "line-through text-gray-500"
+    } else {
+        ""
+    };
     html! {
-        li.list-row.hover:bg-base-300 {
-            div.list-col-grow {
-                (todo.content)
+        li.list-row.hover:bg-base-300
+            hx-post=(post_url)
+            hx-trigger="click"
+            hx-target="closest li"
+            hx-swap="outerHTML" {
+            div.list-col-grow
+            {
+                span class=(content_style) {
+                    (todo.content)
+                }
             }
         }
     }
@@ -34,7 +47,6 @@ pub fn todo_form() -> Markup {
                     legend.fieldset-legend { "New todo" }
                     div.join {
                         input.input.join-item #todo type="text" name="content" {}
-                        // label for="todo" { "Todo content" }
                         button.btn.btn-primary.join-item {"Add"}
                     }
                 }
