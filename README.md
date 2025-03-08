@@ -10,5 +10,6 @@ A proof of concept to see how far you can go with rust + htmx
       duplicating business logic,
 - [x] How do to htmx with websocket,
 - [x] Integrate tailwindcss/daisyui within the template/output HTML,
+- [ ] What testing strategy to use ?
 - [ ] _(Optional)_ Deploy it somewhere to check for any pitfalls.
 - [x] _(Optional)_ Is it possible to have hot reload (templates + app) ?

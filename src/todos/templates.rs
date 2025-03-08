@@ -63,3 +63,87 @@ pub fn todo_form() -> Markup {
         }
     )
 }
+
+#[cfg(test)]
+mod test {
+    use scraper::{Html, Selector};
+
+    use crate::todos::state::Todo;
+
+    use super::todo_view;
+
+    #[test]
+    fn test_todo_view_not_done_todo() {
+        let todo = Todo {
+            content: "not done todo".to_owned(),
+            done: false,
+            id: 0,
+        };
+        let fragment = Html::parse_fragment(&todo_view(&todo).into_string());
+        let selector = Selector::parse("span").unwrap();
+
+        let span = fragment
+            .select(&selector)
+            .find(|el| el.inner_html() == "not done todo")
+            .expect("span should be present");
+
+        assert!(!span.value().attr("class").unwrap().contains("line-through"));
+    }
+
+    #[test]
+    fn test_todo_view_done_todo() {
+        let todo = Todo {
+            content: "done todo".to_owned(),
+            done: true,
+            id: 0,
+        };
+        let fragment = Html::parse_fragment(&todo_view(&todo).into_string());
+        let selector = Selector::parse("span").unwrap();
+
+        let span = fragment
+            .select(&selector)
+            .find(|el| el.inner_html() == "done todo")
+            .expect("span should be present");
+
+        assert!(span.value().attr("class").unwrap().contains("line-through"));
+    }
+
+    #[test]
+    fn test_toggle_url() {
+        let todo = Todo {
+            content: "done todo".to_owned(),
+            done: true,
+            id: 42,
+        };
+        let fragment = Html::parse_fragment(&todo_view(&todo).into_string());
+        let selector = Selector::parse("li").unwrap();
+
+        let li_element = fragment
+            .select(&selector)
+            .next()
+            .expect("li element should exist");
+
+        assert_eq!(
+            li_element.value().attr("hx-post").unwrap(),
+            "/todo/42/toggle"
+        );
+    }
+
+    #[test]
+    fn test_delete_url() {
+        let todo = Todo {
+            content: "done todo".to_owned(),
+            done: true,
+            id: 42,
+        };
+        let fragment = Html::parse_fragment(&todo_view(&todo).into_string());
+        let selector = Selector::parse("button").unwrap();
+
+        let button = fragment
+            .select(&selector)
+            .next()
+            .expect("button should exist");
+
+        assert_eq!(button.value().attr("hx-delete").unwrap(), "/todo/42");
+    }
+}
