@@ -16,4 +16,5 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 
 [dev-dependencies]
+fantoccini = "0.21.4"
 scraper = "0.23.1"
